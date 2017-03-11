@@ -1,5 +1,10 @@
+data/
 target/
 !.mvn/wrapper/maven-wrapper.jar
+
+### Special keywords ###
+**/safe_*/
+**/safe_*
 
 ### STS ###
 .apt_generated
