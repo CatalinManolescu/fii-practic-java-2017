@@ -22,3 +22,10 @@ nbbuild/
 dist/
 nbdist/
 .nb-gradle/
+
+### memory dump ###
+heapdump.hprof
+
+### elastic search ###
+hs_err*
+replay_pid*
