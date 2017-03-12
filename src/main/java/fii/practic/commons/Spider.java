@@ -1,7 +1,7 @@
 package fii.practic.commons;
 
 /**
- * @author Catalin Manolescu <cc.manolescu@gmail.com>
+ * Base interface for all spiders.
  */
 public interface Spider {
     String getName();
