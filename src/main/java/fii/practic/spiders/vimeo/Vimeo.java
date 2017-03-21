@@ -13,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.text.ParseException;
 
 /**
  * Vimeo spider implementation.
@@ -40,6 +39,7 @@ public class Vimeo implements Spider {
      * @param url The URL to read from.
      */
     private void processContent(String url) throws IOException, InterruptedException, NotFoundException {
+        log.debug("Loading data from: " + url);
         Document node = this.readPage(url);
         String nodeContent = node.body().toString();
         VimeoPage pageData = this.getData(nodeContent);
