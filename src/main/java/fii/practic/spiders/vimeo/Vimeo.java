@@ -6,13 +6,16 @@ import fii.practic.commons.Spider;
 import fii.practic.spiders.vimeo.data.VimeoModule;
 import fii.practic.spiders.vimeo.data.VimeoModuleItem;
 import fii.practic.spiders.vimeo.data.VimeoPage;
+import fii.practic.spiders.vimeo.data.VimeoSearchResult;
 import javassist.NotFoundException;
+import org.apache.commons.lang.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
  * Vimeo spider implementation.
@@ -44,23 +47,58 @@ public class Vimeo implements Spider {
         String nodeContent = node.body().toString();
         VimeoPage pageData = this.getData(nodeContent);
 
-        // if pageData is null then we are at the
+        // if pageData is null then we are at the video search page
         if (pageData == null) {
             // extract video info
-            // TODO read all video pages and extract the video data
+            VimeoSearchResult searchResult = this.getSearchResultData(nodeContent);
+            if (searchResult != null) {
+                // save the data
+                this.saveData(searchResult.getFiltered().getData());
 
-            // pause processing in order to not get blocked (should be done for each video page)
-            Thread.sleep(2000);
+                // keep this while testing
+                if (searchResult.getFiltered().getPage() > 2) {
+                    // stop execution
+                    return;
+                }
+
+                // pause processing in order to not get blocked
+                Thread.sleep(1000);
+
+                // process next page
+                VimeoSearchResult.Paging paging = searchResult.getFiltered().getPaging();
+                if (!StringUtils.isBlank(paging.getNext())) {
+                    // check for and clean the query params
+                    int queryParamsIndex = url.indexOf('?');
+                    if (queryParamsIndex > -1) {
+                        url = url.substring(0, queryParamsIndex);
+                    }
+
+                    this.processContent(url + paging.getNext());
+                }
+            }
+
             return ;
         }
 
+        // navigate through categories
         for (VimeoModule module : pageData.getModules()) {
             if ("category_menu".equals(module.getType())) {
                 for (VimeoModuleItem moduleItem : module.getItems()) {
+                    // pause processing in order to not get blocked
+                    Thread.sleep(500);
                     this.processContent(BASE_URL + moduleItem.getUrl());
+
+                    // keep this while testing
+                    break; // stop execution
                 }
                 return ;
             }
+        }
+    }
+
+    private void saveData(List<VimeoSearchResult.ResultItem> resultItemList) {
+        for (VimeoSearchResult.ResultItem item : resultItemList) {
+            // do something with this data
         }
     }
 
@@ -106,6 +144,29 @@ public class Vimeo implements Spider {
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
 
         return mapper.readValue(rowData, VimeoPage.class);
+    }
+
+    private VimeoSearchResult getSearchResultData(String content) throws IOException {
+        // We use plain string manipulation to extract the data from the page
+        String dataStart = "var data = ";
+        String dataEnd = "}};";
+
+        int startIndex = this.computeIndex(content.indexOf(dataStart), dataStart);
+
+        if (startIndex == -1) {
+            // this is not a category page so there is no need to continue
+            return null;
+        }
+
+        content = content.substring(startIndex);
+        int endIndex = this.computeIndex(content.indexOf(dataEnd), dataEnd);
+
+        String rowData = content.substring(0, endIndex);
+
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+
+        return mapper.readValue(rowData, VimeoSearchResult.class);
     }
 
     private int computeIndex(int startIndex, String needle) {
