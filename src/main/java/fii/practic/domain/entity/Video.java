@@ -8,20 +8,13 @@ import org.springframework.data.elasticsearch.annotations.Document;
  */
 @Document(indexName = "spider", type = "video")
 public class Video {
-    @Id
-    private String id;
     private String name;
     private VideoType videoType;
+    private String videoSource;
+
+    @Id
     private String url;
     private String embeded;
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
 
     public String getName() {
         return name;
@@ -37,6 +30,14 @@ public class Video {
 
     public void setVideoType(VideoType videoType) {
         this.videoType = videoType;
+    }
+
+    public String getVideoSource() {
+        return videoSource;
+    }
+
+    public void setVideoSource(String videoSource) {
+        this.videoSource = videoSource;
     }
 
     public String getUrl() {

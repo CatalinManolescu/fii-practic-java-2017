@@ -2,7 +2,11 @@ package fii.practic.spiders.vimeo;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fii.practic.ApplicationContextHolder;
 import fii.practic.commons.Spider;
+import fii.practic.domain.control.VideoControl;
+import fii.practic.domain.entity.Video;
+import fii.practic.domain.entity.VideoType;
 import fii.practic.spiders.vimeo.data.VimeoModule;
 import fii.practic.spiders.vimeo.data.VimeoModuleItem;
 import fii.practic.spiders.vimeo.data.VimeoPage;
@@ -15,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -25,6 +30,8 @@ public class Vimeo implements Spider {
 
     public static final String BASE_URL = "https://vimeo.com";
 
+    private VideoControl videoControl;
+
     @Override
     public String getName() {
         return "Vimeo";
@@ -32,7 +39,7 @@ public class Vimeo implements Spider {
 
     @Override
     public void start() throws Exception {
-
+        this.videoControl = ApplicationContextHolder.getBean(VideoControl.class);
         this.processContent(BASE_URL);
     }
 
@@ -97,9 +104,34 @@ public class Vimeo implements Spider {
     }
 
     private void saveData(List<VimeoSearchResult.ResultItem> resultItemList) {
+        List<Video> newVideos = new ArrayList<>();
+
+        Video video;
         for (VimeoSearchResult.ResultItem item : resultItemList) {
-            // do something with this data
+            video = new Video();
+            VimeoSearchResult.VimeoClip clip = item.getClip();
+
+            video.setVideoType(this.getVideoType(item.getType()));
+            video.setVideoSource(this.getName());
+            video.setName(clip.getName());
+            video.setUrl(clip.getLink());
+
+            // TODO get the remaining data
+
+            newVideos.add(video);
         }
+
+        videoControl.save(newVideos);
+    }
+
+    private VideoType getVideoType(String type) {
+        VideoType videoType = VideoType.lookup(type);
+
+        if (videoType == null) {
+            videoType = VideoType.UNKNOWN;
+        }
+
+        return videoType;
     }
 
     /**

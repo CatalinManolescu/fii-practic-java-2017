@@ -99,7 +99,7 @@ public class VimeoSearchResult {
         }
     }
 
-    private static class VimeoClip {
+    public static class VimeoClip {
         private String uri;
         private String name;
         private String link;
