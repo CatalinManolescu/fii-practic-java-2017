@@ -11,7 +11,6 @@ import fii.practic.spiders.vimeo.data.VimeoModule;
 import fii.practic.spiders.vimeo.data.VimeoModuleItem;
 import fii.practic.spiders.vimeo.data.VimeoPage;
 import fii.practic.spiders.vimeo.data.VimeoSearchResult;
-import javassist.NotFoundException;
 import org.apache.commons.lang.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -19,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,7 +48,7 @@ public class Vimeo implements Spider {
      *
      * @param url The URL to read from.
      */
-    private void processContent(String url) throws IOException, InterruptedException, NotFoundException {
+    private void processContent(String url) throws IOException, InterruptedException, ParseException {
         log.debug("Loading data from: " + url);
         Document node = this.readPage(url);
         String nodeContent = node.body().toString();
@@ -144,7 +144,7 @@ public class Vimeo implements Spider {
     /**
      * Extract data from page.
      */
-    private VimeoPage getData(String content) throws IOException, NotFoundException {
+    private VimeoPage getData(String content) throws IOException, ParseException {
         // We use plain string manipulation to extract the data from the page
         String dataStart = "vimeo.explore_data = ";
         String pageTypeExplore = "\"page_type\":\"explore\"}";
@@ -167,7 +167,7 @@ public class Vimeo implements Spider {
 
         if (endIndex == -1) {
             // if we get here then the page content has changed or there is a type that we do not check for
-            throw new NotFoundException("Could not identify data source");
+            throw new ParseException("Could not identify data source", -1);
         }
 
         String rowData = content.substring(startIndex, endIndex);
