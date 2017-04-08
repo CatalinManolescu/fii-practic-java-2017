@@ -12,12 +12,14 @@ import fii.practic.spiders.vimeo.data.VimeoModuleItem;
 import fii.practic.spiders.vimeo.data.VimeoPage;
 import fii.practic.spiders.vimeo.data.VimeoSearchResult;
 import org.apache.commons.lang.StringUtils;
+import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.SocketTimeoutException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +30,7 @@ import java.util.List;
 public class Vimeo implements Spider {
     private static final Logger log = LoggerFactory.getLogger(Vimeo.class);
 
-    public static final String BASE_URL = "https://vimeo.com";
+    private static final String BASE_URL = "https://vimeo.com";
 
     private VideoControl videoControl;
 
@@ -62,14 +64,18 @@ public class Vimeo implements Spider {
                 // save the data
                 this.saveData(searchResult.getFiltered().getData());
 
-                // keep this while testing
-                if (searchResult.getFiltered().getPage() > 2) {
+                // enable this while testing
+                /*if (searchResult.getFiltered().getPage() > 2) {
                     // stop execution
                     return;
-                }
+                }*/
 
                 // pause processing in order to not get blocked
-                Thread.sleep(1000);
+                if (searchResult.getFiltered().getPage() % 50 == 0) {
+                    // add extra pause
+                    Thread.sleep(60000 + this.randomSleepValue());
+                }
+                Thread.sleep(7000 + this.randomSleepValue());
 
                 // process next page
                 VimeoSearchResult.Paging paging = searchResult.getFiltered().getPaging();
@@ -92,11 +98,11 @@ public class Vimeo implements Spider {
             if ("category_menu".equals(module.getType())) {
                 for (VimeoModuleItem moduleItem : module.getItems()) {
                     // pause processing in order to not get blocked
-                    Thread.sleep(500);
+                    Thread.sleep(3000 + this.randomSleepValue());
                     this.processContent(BASE_URL + moduleItem.getUrl());
 
-                    // keep this while testing
-                    break; // stop execution
+                    // enable this while testing
+                    //break; // stop execution
                 }
                 return ;
             }
@@ -137,8 +143,45 @@ public class Vimeo implements Spider {
     /**
      * Setup connection and read page.
      */
-    private Document readPage(String url) throws IOException {
-        return Jsoup.connect(url).timeout(10000).get();
+    private Document readPage(String url) throws IOException, InterruptedException {
+        return this.readPage(url, 0);
+    }
+
+    /**
+     * Setup connection, read page and retry if connection failed.
+     */
+    private Document readPage(String url, int retryCount) throws IOException, InterruptedException {
+        Document document;
+        try {
+            document = Jsoup.connect(url)
+                    .userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv1.8.1.6) Gecko/20070725 Firefox/2.0.0.6")
+                    .referrer("http://www.google.com")
+                    .timeout(30000)
+                    .followRedirects(true)
+                    .get();
+        } catch (HttpStatusException | SocketTimeoutException e) {
+            // check if 5xx status or max retry count achieved
+            if (e instanceof HttpStatusException && ((HttpStatusException) e).getStatusCode() >= 500
+                    || retryCount > 5) {
+                throw e;
+            }
+
+            retryCount++;
+
+            // pause before retry (multiply by the number of retries
+            Thread.sleep(5 * retryCount * 60 * 1000);
+
+            // retry
+            return this.readPage(url, retryCount);
+        }
+        return document;
+    }
+
+    /**
+     * Generate random sleep value in an attempt to simulate user clicks.
+     */
+    private int randomSleepValue() {
+        return (int) (Math.random() * 10000);
     }
 
     /**
