@@ -4,8 +4,10 @@
      elasticsearch:
        properties:
          node.name: fii-client
-         node.master: false
-         node.data: false
+         # set to false when running standalone ES server
+         node.master: true
+         # set to false when running standalone ES server
+         node.data: true
        #cluster-nodes: 192.168.56.53:9300
  logging:
    level:
