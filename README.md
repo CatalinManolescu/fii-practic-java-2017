@@ -9,4 +9,17 @@ Tema aplicatiei va fi construirea unei colectii media (poze/video/muzica) pornin
   - Eclipse
   - curl
 
+### Resurse
+**Spring:**
+- ApplicationContext https://spring.io/understanding/application-context 
+- Dependency injection https://docs.spring.io/spring/docs/current/spring-framework-reference/html/beans.html
+- Spring data http://projects.spring.io/spring-data/
 
+**Design patterns**
+- https://sourcemaking.com/design_patterns
+- http://java-design-patterns.com/principles
+
+**Elastic Search**
+  - https://www.elastic.co/products/elasticsearch
+  - API https://www.elastic.co/guide/en/elasticsearch/reference/2.4/docs.html
+  - Spring data http://docs.spring.io/spring-data/elasticsearch/docs/current/reference/html/
